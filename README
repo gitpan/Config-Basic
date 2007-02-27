@@ -1,0 +1,140 @@
+SYNOPSIS
+       Config::Basic
+
+               A basic config parser
+               for file where a section start at first column and end when a new section appear
+
+METHODS
+            OO interface
+
+    new
+        Create a new parser
+
+            "sections" = an ARRAY with all possible section "-target a file
+            name to parse or a ref ARRAY with the data to parse "-data" is a
+            synonym of "-target" "-file" is a synonym of "-target"
+
+            my $a = Config::Basic->new( -data => \@data, -sections => [
+            'global', 'listen', 'defaults' ], );
+
+    target
+            get/set the target in use
+
+            my $target = $a->target(  ) . "\n";             # return the current target     
+            my $target =  $a->target( "new.cfg" ) . "\n";   # change the target to the file "new.cfg" 
+                                                            and return the new target (here the file name)
+            my $target = $a->target( \@data ) . "\n";       # change the target to the a ARRAY ref 
+                                                            and return the new target (her the ARRAY ref)
+
+    sections
+            get/set the sections to use
+
+            my $sect = $a->sections(  ) . "\n";                             # return  a ARRAY ref with the current sections 
+            my $new_sect = $a->sections( [ 'all', 'server' ]  ) . "\n";     # set a new set of sections and 
+                                                                            return a ARRAY ref with the current sections
+
+    get_section
+            method to retrieve a section.
+            the method expect a ref to a HASH with { start => "start_line" , end => "end_line" }
+
+            my $se = $a->get_section( $res->{ listen }[1] );   # return 3 element:
+                            start line
+                            end line
+                            ARRAY ref with the content of the section
+
+    parse
+            method to parse a target
+            the method return a ref  to an HASH. 
+            Each key are a section.
+            Each value contain a ref to an ARRAY with a ref to a HASH for each section seen in the target
+
+            my $se = $a->get_section( $res->{ listen }[1] );   # return ARRAY ref with the content of the section
+
+EXAMPLES
+    Parse a file like this (named here test1.cfg)
+
+    ########################################################################
+    ###
+
+            global
+                    daemon
+                    max             10000    
+                    log 127.0.0.1 local0 notice
+                    pidfile  /var/run/running.pid
+                    nbproc  2
+
+            defaults
+                    mode    application
+                    option  dontlognull
+                    option  closeonexit
+                    retries 1
+                    contimeout      5000
+            special  extra value
+                    item    1
+                    item    2       
+            server  192.168.1.2
+                    log     global
+                    option  test
+                    type    fw 750
+            server  192.168.1.3
+                    log     local
+                    option  test
+                    type    pw 800
+                
+    ########################################################################
+    ###
+
+            #!/usr/bin/perl
+            use strict;
+            use Config::Basic;
+            use Data::Dumper;
+            use Config::General;
+
+            my $data_file = "test1.cfg";
+            my $a = Config::Basic->new(
+                -file     => "test1.cfg",
+                -sections => [ 'global', 'server', 'defaults' ],
+            );
+
+            print Dumper( $a->sections );
+            my $res = $a->parse();
+            print Dumper( $res );
+
+            my $se = $a->get_section( $res->{ server }[1] );
+
+            my %re = ParseConfig( -String => $se );
+            print Dumper( \%re );
+            print Dumper( $a->sections( [ 'global', 'server', 'special', 'defaults' ] ) );
+            $res = $a->parse();
+            print Dumper( $res );
+
+            $se = $a->get_section( $res->{ special }[0] );
+            print Dumper( $se )
+
+AUTHOR
+    Fabrice Dulaunoy <fabrice[at]dulaunoy[dot]com>
+
+    07 december 2006
+
+LICENSE
+    Under the GNU GPL2
+
+    This program is free software; you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by the
+    Free Software Foundation; either version 2 of the License, or (at your
+    option) any later version.
+
+    This program is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+    Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+    Config::Basic Copyright (C) 2006 DULAUNOY Fabrice. Config::Basic comes
+    with ABSOLUTELY NO WARRANTY; for details See:
+    http://www.gnu.org/licenses/gpl.html This is free software, and you are
+    welcome to redistribute it under certain conditions;
+
