@@ -7,7 +7,7 @@ use File::Basename;
 use File::Spec 0.82;
 use lib File::Spec->catdir('lib');      # use our self to install
 use lib File::Spec->catdir('t', 'lib'); # use bundled Test::More
-  use Module::Build;
+use Module::Build;
 my $build = Module::Build->new
   (
    module_name => 'Config::Basic',

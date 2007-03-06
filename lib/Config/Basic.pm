@@ -2,8 +2,8 @@
 # Tie::Countloop package
 # Gnu GPL2 license
 #
-# $Id: Basic.pm,v 1.8 2006/12/12 13:10:00 fabrice Exp $
-# $Revision: 1.8 $
+# $Id:: Basic.pm 25 2007-03-06 08:18:26Z fabrice         $
+# $Revision:: 25                                         $
 #
 # Fabrice Dulaunoy <fabrice@dulaunoy.com>
 ###########################################################
@@ -29,11 +29,11 @@ use strict;
 use Carp;
 use IO::All;
 
-use fields qw{ sections target };
+use fields qw{ sections target traillers };
 use vars qw($VERSION);
 
-$VERSION = do { my @rev = ( q$Revision: 1.8 $ =~ /\d+/g ); sprintf "%d." . "%d" x $#rev, @rev };
-
+#$VERSION = do { my @rev = ( q$Revision: 25 $ =~ /\d+/g ); sprintf "%d." . "%d" x $#rev, @rev };
+$VERSION = do { my @rev = ( q$Revision: 25 $ =~ /\d+/g ); sprintf "1.%02d", @rev };
 
 use Data::Dumper;
 ###########################################################################
@@ -46,7 +46,7 @@ use Data::Dumper;
 	
 	OO interface
 
-=head3 new
+=head2 new
 
 =over
 
@@ -76,8 +76,9 @@ sub new
     no strict "refs";
     my $fields_ref = \%{ "${class}::FIELDS" };
     my $self       = [$fields_ref];
-    $self->{ sections }   = { @_ }->{ -sections };
-    $self->{ target }     = { @_ }->{ -file } || { @_ }->{ -data } || { @_ }->{ -target };
+    $self->{ sections }  = { @_ }->{ -sections };
+    $self->{ traillers } = { @_ }->{ -traillers };
+    $self->{ target }    = { @_ }->{ -file } || { @_ }->{ -data } || { @_ }->{ -target };
     bless( $self, $class );
     return $self;
 }
@@ -87,15 +88,15 @@ sub new
 ### 			get/set method for the target object 		###
 ###########################################################################
 
-=head3 target
+=head2 target
 
 	get/set the target in use
 
 	my $target = $a->target(  ) . "\n";		# return the current target	
-	my $target =  $a->target( "new.cfg" ) . "\n";	# change the target to the file "new.cfg" 
-							and return the new target (here the file name)
-	my $target = $a->target( \@data ) . "\n";	# change the target to the a ARRAY ref 
-							and return the new target (her the ARRAY ref)
+	my $target =  $a->target( "new.cfg" ) ;		# change the target to the file "new.cfg" 
+							# and return the new target (here the file name)
+	my $target = $a->target( \@data );		# change the target to the a ARRAY ref 
+							# and return the new target (here the ARRAY ref)
 
 =cut	
 
@@ -116,18 +117,16 @@ sub target
 ##"		sections are a ARRAY  of all possible section		###
 ###########################################################################
 
-
-=head3 sections
+=head2 sections
 
 	get/set the sections to use
 
 
 	my $sect = $a->sections(  ) . "\n";				# return  a ARRAY ref with the current sections	
-	my $new_sect = $a->sections( [ 'all', 'server' ]  ) . "\n"; 	# set a new set of sections and 
-									return a ARRAY ref with the current sections
+	my $new_sect = $a->sections( [ 'all', 'server' ]  ) ;   	# create a new set of sections and 
+									# return a ARRAY ref with the current sections
 
 =cut	
-
 
 sub sections
 {
@@ -141,8 +140,39 @@ sub sections
 }
 ###########################################################################
 
+###########################################################################
+### 		get/set  method for the traillers to skip		###
+##"		traillers are a ARRAY  of all possible section		###
+###########################################################################
 
-##########################################################################
+=head2 traillers
+
+	get/set the traillers to skip
+	if at the end of a section, lines match one of these REGEX 
+	these lines are not include in the section.
+	This allow to keep blank line and comment inside a section 
+	and get the real ending of the section (e.g. to allow an insert) 
+
+	my $sect = $a->trailler(  ) . "\n";				# return  a ARRAY ref with the current traillers	
+	my $new_sect = $a->trailler( [ '^\s*$', '^#' ]  ) ;     	# create a new set of sections and 
+									# return a ARRAY ref with the current traillers
+
+=cut	
+
+sub traillers
+{
+    my $self   = shift;
+    my $object = shift;
+    if ( $object )
+    {
+        $self->{ traillers } = $object;
+    }
+
+    return $self->{ traillers };
+}
+###########################################################################
+
+###########################################################################
 ### 		method to retrieve a section				###
 ###			Param: a ref hash with start and end line	###
 ###			 {						###
@@ -152,19 +182,18 @@ sub sections
 ###									###
 ###########################################################################
 
-=head3 get_section
+=head2 get_section
 
 	method to retrieve a section.
 	the method expect a ref to a HASH with { start => "start_line" , end => "end_line" }
 
 
-	my $se = $a->get_section( $res->{ listen }[1] );   # return 3 element:
+	my $se = $a->get_section( $res->{ listen }[1] );   # return 3 elements:
 			start line
 			end line
 			ARRAY ref with the content of the section
 
 =cut	
-
 
 sub get_section
 {
@@ -179,9 +208,9 @@ sub get_section
     {
         @all = @{ $self->{ target } };
     }
-    my @section = splice @all, $object->{ start }, $object->{ end } - $object->{ start };
+    my @section = splice @all, $object->{ start }, $object->{ end } - $object->{ start } +1;
 
-    return  $object->{ start }, $object->{ end } , \@section ;
+    return $object->{ start }, $object->{ end }, \@section;
 
 }
 ###########################################################################
@@ -190,7 +219,7 @@ sub get_section
 ### 			parse the target and return a ref to a hash 	###
 ###			where each section contain a array of hash 	###
 ###			with start  and end line (fisrt line = 0)	###
-###									###         
+###									###
 ###	   { 	 'global' => [						###
 ###                        {						###
 ###                          'end' => 8,				###
@@ -200,15 +229,14 @@ sub get_section
 ###        }								###
 ###########################################################################
 
-
-=head3 parse
+=head2 parse
 
 	method to parse a target
-	the method return a ref  to an HASH. 
+	the method return a ref to a HASH. 
 	Each key are a section.
 	Each value contain a ref to an ARRAY with a ref to a HASH for each section seen in the target
 
-	my $se = $a->get_section( $res->{ listen }[1] );   # return ARRAY ref with the content of the section
+	my $se = $a->get_section( $res->{ listen }[1] );   # return ARRAY ref with the content of the second section 'listen'
 
 =cut	
 
@@ -237,34 +265,51 @@ sub parse
     my $start;
     my $end;
     my $seen_regex;
-
+    my $trailler = 1;
+    my $trail_regex;
+    if ( defined $self->{ traillers } )
+    {
+        $trail_regex = "(" . ( join ")|(", @{ $self->{ traillers } } ) . ")";
+    }
     foreach my $line ( @all )
     {
         $line_nbr++;
-	foreach my $regex (@{  $self->{ sections } })
-	{
-        if ( $line =~ m/^($regex)/g )
-        {    
-            if ( $seen )
+        foreach my $regex ( @{ $self->{ sections } } )
+        {
+            if ( $line =~ m/^($regex)/g )
             {
-                $end = $line_nbr;
-                my @tmp = @{ $sect{ $seen_regex } };
-                my %range;
-                $range{ start } = $start;
-                $range{ end }   = $end;
-                push @tmp, \%range;
-                $sect{ $seen_regex } = \@tmp;
-                $start               = $line_nbr;
-                $seen_regex          = $regex;
+                if ( $seen )
+                {
+                    $end = $line_nbr;
+                    my @tmp = @{ $sect{ $seen_regex } };
+                    my %range;
+                    $range{ start } = $start;
+                    $range{ end }   = $end - $trailler;
+                    $trailler       = 1;
+                    push @tmp, \%range;
+                    $sect{ $seen_regex } = \@tmp;
+                    $start               = $line_nbr;
+                    $seen_regex          = $regex;
+                }
+                else
+                {
+                    $seen_regex = $regex;
+                    $start      = $line_nbr;
+                    $seen ^= 1;
+                }
+            }
+        }
+        if ( defined $self->{ traillers } )
+        {
+            if ( $seen && ( $line =~ m/($trail_regex)/g ) )
+            {
+                $trailler++;
             }
             else
             {
-                $seen_regex = $regex;
-                $start      = $line_nbr;
-                $seen ^= 1;
+                $trailler = 1;
             }
         }
-    }
     }
 
     if ( $seen )
@@ -273,7 +318,7 @@ sub parse
         my @tmp = @{ $sect{ $seen_regex } };
         my %range;
         $range{ start } = $start;
-        $range{ end }   = $line_nbr;
+        $range{ end }   = $line_nbr - $trailler;
         push @tmp, \%range;
         $sect{ $seen_regex } = \@tmp;
     }
@@ -284,11 +329,6 @@ sub parse
 1;
 
 __END__
-
-=pod
-
-=begin readme
-
 
 =head1 EXAMPLES
 
@@ -313,17 +353,26 @@ Parse a file like this (named here test1.cfg)
 	special  extra value
 		item	1
 		item	2	
+		
 	server	192.168.1.2
-		log	global
-		option	test
-		type	fw 750
+	log	global
+	option	test
+	type	ping 750
+	
+	
 	server	192.168.1.3
 		log	local
 		option	test
-		type	pw 800
+		type	udp 800
+
+	server	192.168.1.5
+		log	global
+		option	test2
+		type	tcp 4000
 		
 ###########################################################################	
 
+## First example: ##
 
 	#!/usr/bin/perl
         use strict;
@@ -332,25 +381,86 @@ Parse a file like this (named here test1.cfg)
         use Config::General;
 
         my $data_file = "test1.cfg";
-        my $a = Config::Basic->new(
-            -file     => "test1.cfg",
-            -sections => [ 'global', 'server', 'defaults' ],
-        );
+       	# Instantiate a new Config::Basic object
+	# the input file is "test1.cfg"
+	# we expect 3 sections tag
+	# and each trailling part of the section matching one of the regular "traillers" REGEX is skipped
+	# this allow to skip trailling blank line or comment at the end, 
+	# but keep blank line and comment inside the section
 
-        print Dumper( $a->sections );
-        my $res = $a->parse();
-        print Dumper( $res );
+	my $a = Config::Basic->new(
+	    	-file     => $data_file,
+    		-sections => [ 'global', 'server', 'defaults' ],
+    		-traillers => [ '^\s*$' , '^#' ],
+	);
 
-        my $se = $a->get_section( $res->{ server }[1] );
+	print "\nPrint the 'sections' set\n";
+	print Dumper( $a->sections );
 
-        my %re = ParseConfig( -String => $se );
-        print Dumper( \%re );
-        print Dumper( $a->sections( [ 'global', 'server', 'special', 'defaults' ] ) );
-        $res = $a->parse();
-        print Dumper( $res );
+	print "\nPrint the parsed data\n";
+	my $res = $a->parse();
+	print Dumper( $res );
 
-        $se = $a->get_section( $res->{ special }[0] );
-        print Dumper( $se )
+	my $se = $a->get_section( $res->{ server }[1] );
+
+	print "\nPrint Config::General result for the second 'server' section\n";
+	my %re = ParseConfig( -String => $se );
+	print Dumper( \%re );
+
+	print "\nSet a new sections set and print it\n";
+	print Dumper( $a->sections( [ 'global', 'server', 'special', 'defaults' ] ) );
+
+
+	print "\nParse the data and print\n";
+	$res = $a->parse();
+	print Dumper( $res );
+
+
+
+## Second example ####
+
+	#!/usr/bin/perl
+        use strict;
+        use Config::Basic;
+        use Data::Dumper;
+       
+	use IO::All;
+
+	my $data_file = "test1.cfg";
+
+	my @data = io( $data_file )->chomp->slurp;
+	my $a    = Config::Basic->new(
+   	 	-file     => \@data,
+    		-sections => [ 'global', 'server', 'defaults' ],
+    		-traillers => [ '^\s*$', '^#' ],
+		);
+
+	my $res = $a->parse();
+
+	# Get the second 'server' section and use start , end and real data
+	my ( $start, $end, $sect ) = $a->get_section( $res->{ server }[1] );
+
+	# set the line counter to the start of the section
+	my $line_nbr = $start;
+	foreach my $line ( @{ $sect } )
+	{
+	# increment the line counter
+	    $line_nbr++;
+    
+	# made some test onthe line data
+	    if ( $line =~ /type/ )
+	    {
+	        print "$line_nbr $line\n";
+	
+	# directly modify the line in the real data
+	        $data[ $line_nbr -1 ] =~ s/udp/UDP/;
+	    }
+	}
+	
+	# show the result (or save, or  ...)
+	print Dumper( \@data );
+
+
 
 =end readme
 
