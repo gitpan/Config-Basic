@@ -22,14 +22,17 @@ my $data_file = "test1.cfg";
 
 my $a = Config::Basic->new(
     -file     => $data_file,
-    -sections => [ 'global', 'server', 'defaults' ],
+    -sections => [ 'global', 'server', 'defaults', 'special' ],
     -traillers => [ '^\s*$' , '^#' ],
+    -headers => [ '^#' ],
 );
 
 print "\nPrint the 'sections' set\n";
 print Dumper( $a->sections );
 
 print "\nPrint the parsed data\n";
+print "look at the value start_headers and end_traillers\n";
+print "for the section 'special' and the first section 'server'\n";
 my $res = $a->parse();
 print Dumper( $res );
 
@@ -57,8 +60,12 @@ print "\nPrint the 'traillers' set\n";
 $se = $a->traillers( );
 print Dumper( $se );
 
+print "\nPrint the 'headers' set\n";
+$se = $a->headers( );
+print Dumper( $se );
 
 
+print "\n";
 print "#" x 30;
 print "\n Second example\n";
 print "#" x 30;

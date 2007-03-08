@@ -2,10 +2,10 @@
 # Tie::Countloop package
 # Gnu GPL2 license
 #
-# $Id:: Basic.pm 25 2007-03-06 08:18:26Z fabrice         $
-# $Revision:: 25                                         $
+# $Id:: Basic.pm 26 2007-03-08 15:56:20Z root            $
+# $Revision:: 26                                         $
 #
-# Fabrice Dulaunoy <fabrice@dulaunoy.com>
+# Fabrice Dulaunoy <fabrice_at_dulaunoy_dot_com>
 ###########################################################
 # ChangeLog:
 #
@@ -29,11 +29,11 @@ use strict;
 use Carp;
 use IO::All;
 
-use fields qw{ sections target traillers };
+use fields qw{ sections target traillers headers};
 use vars qw($VERSION);
 
-#$VERSION = do { my @rev = ( q$Revision: 25 $ =~ /\d+/g ); sprintf "%d." . "%d" x $#rev, @rev };
-$VERSION = do { my @rev = ( q$Revision: 25 $ =~ /\d+/g ); sprintf "1.%02d", @rev };
+#$VERSION = do { my @rev = ( q$Revision: 26 $ =~ /\d+/g ); sprintf "%d." . "%d" x $#rev, @rev };
+$VERSION = do { my @rev = ( q$Revision: 26 $ =~ /\d+/g ); sprintf "1.%02d", @rev };
 
 use Data::Dumper;
 ###########################################################################
@@ -54,10 +54,17 @@ Create a new parser
 
 =over
 
-"sections" = an ARRAY with all possible section
-"-target	a file name to parse or a ref ARRAY with the data to parse
+"-sections" = an ARRAY with all possible section
+"-target"	a file name to parse or a ref ARRAY with the data to parse
 "-data"	  	is a synonym of "-target"
 "-file"	  	is a synonym of "-target"
+
+t
+"-traillers"	is an  ARRAY with all regular expresiion allowed for a trailler (to skip in the preceding section )
+"-headers"	is an  ARRAY with all regular expresiion allowed for a headers (to add to the following section)
+
+the trailler and headers could be retrived into the parsed data
+these 2 parameters are optionals
 
 my $a  = B<Config::Basic>->new(
     	-data => \@data,
@@ -78,6 +85,7 @@ sub new
     my $self       = [$fields_ref];
     $self->{ sections }  = { @_ }->{ -sections };
     $self->{ traillers } = { @_ }->{ -traillers };
+    $self->{ headers }   = { @_ }->{ -headers };
     $self->{ target }    = { @_ }->{ -file } || { @_ }->{ -data } || { @_ }->{ -target };
     bless( $self, $class );
     return $self;
@@ -92,7 +100,7 @@ sub new
 
 	get/set the target in use
 
-	my $target = $a->target(  ) . "\n";		# return the current target	
+	my $target = $a->target(  ) ;			# return the current target	
 	my $target =  $a->target( "new.cfg" ) ;		# change the target to the file "new.cfg" 
 							# and return the new target (here the file name)
 	my $target = $a->target( \@data );		# change the target to the a ARRAY ref 
@@ -122,9 +130,9 @@ sub target
 	get/set the sections to use
 
 
-	my $sect = $a->sections(  ) . "\n";				# return  a ARRAY ref with the current sections	
-	my $new_sect = $a->sections( [ 'all', 'server' ]  ) ;   	# create a new set of sections and 
-									# return a ARRAY ref with the current sections
+	my $sect = $a->sections(  ) ;				# return  a ARRAY ref with the current sections	
+	my $new_sect = $a->sections( [ 'all', 'server' ]  );   	# create a new set of sections and 
+								# return a ARRAY ref with the current sections
 
 =cut	
 
@@ -153,9 +161,9 @@ sub sections
 	This allow to keep blank line and comment inside a section 
 	and get the real ending of the section (e.g. to allow an insert) 
 
-	my $sect = $a->trailler(  ) . "\n";				# return  a ARRAY ref with the current traillers	
-	my $new_sect = $a->trailler( [ '^\s*$', '^#' ]  ) ;     	# create a new set of sections and 
-									# return a ARRAY ref with the current traillers
+	my $sect = $a->trailler(  ) ;				# return  a ARRAY ref with the current traillers	
+	my $new_sect = $a->trailler( [ '^\s*$', '^#' ]  ) ;     # create a new set of traillers and 
+								# return a ARRAY ref with the current traillers
 
 =cut	
 
@@ -169,6 +177,39 @@ sub traillers
     }
 
     return $self->{ traillers };
+}
+###########################################################################
+
+###########################################################################
+### 		get/set  method for the header to add			###
+###		header with the following section section		###
+###		this allow to  keep comment with the section		###
+###########################################################################
+
+=head2 traillers
+
+	get/set the headers to at
+	if before of a  section, lines match one of these REGEX 
+	these lines are add in the section (under the tag "start_headers").
+	This allow to keep comment to belong to a following section 
+	and get the real starting of the section (e.g. to allow an insert) 
+
+	my $sect = $a->header(  );				# return  a ARRAY ref with the current headers	
+	my $new_sect = $a->headers( [ '^\s*$', '^#' ]  ) ;     	# create a new set of headers and 
+								# return a ARRAY ref with the current headers
+
+=cut	
+
+sub headers
+{
+    my $self   = shift;
+    my $object = shift;
+    if ( $object )
+    {
+        $self->{ headers } = $object;
+    }
+
+    return $self->{ headers };
 }
 ###########################################################################
 
@@ -189,8 +230,8 @@ sub traillers
 
 
 	my $se = $a->get_section( $res->{ listen }[1] );   # return 3 elements:
-			start line
-			end line
+			start line (sithout headers)
+			end line (without traillers)
 			ARRAY ref with the content of the section
 
 =cut	
@@ -208,7 +249,7 @@ sub get_section
     {
         @all = @{ $self->{ target } };
     }
-    my @section = splice @all, $object->{ start }, $object->{ end } - $object->{ start } +1;
+    my @section = splice @all, $object->{ start }, $object->{ end } - $object->{ start } + 1;
 
     return $object->{ start }, $object->{ end }, \@section;
 
@@ -235,7 +276,12 @@ sub get_section
 	the method return a ref to a HASH. 
 	Each key are a section.
 	Each value contain a ref to an ARRAY with a ref to a HASH for each section seen in the target
-
+	There are for key in each section descrition
+		start 		= the line where the section start 
+		end   		= the line where the section end without the traillers part if defined
+		start_header 	= the line where the section start included the header if defined
+		end_trailler	= the line where the section end with the traillers part if defined
+		
 	my $se = $a->get_section( $res->{ listen }[1] );   # return ARRAY ref with the content of the second section 'listen'
 
 =cut	
@@ -265,12 +311,23 @@ sub parse
     my $start;
     my $end;
     my $seen_regex;
-    my $trailler = 1;
-    my $trail_regex;
+    my $traillers = 1;
+    my $headers   = 0;
+    my $traillers_regex;
+    my $headers_regex;
+    my $head;
+    my $head_start;
+    my $head_end;
+
     if ( defined $self->{ traillers } )
     {
-        $trail_regex = "(" . ( join ")|(", @{ $self->{ traillers } } ) . ")";
+        $traillers_regex = "(" . ( join ")|(", @{ $self->{ traillers } } ) . ")";
     }
+    if ( defined $self->{ headers } )
+    {
+        $headers_regex = "(" . ( join ")|(", @{ $self->{ headers } } ) . ")";
+    }
+    my $old_headers = 0;
     foreach my $line ( @all )
     {
         $line_nbr++;
@@ -278,18 +335,22 @@ sub parse
         {
             if ( $line =~ m/^($regex)/g )
             {
+
                 if ( $seen )
                 {
                     $end = $line_nbr;
                     my @tmp = @{ $sect{ $seen_regex } };
                     my %range;
-                    $range{ start } = $start;
-                    $range{ end }   = $end - $trailler;
-                    $trailler       = 1;
+                    $range{ start }         = $start;
+                    $range{ end }           = $end - $traillers;
+                    $range{ end_traillers } = $end - 1;
+                    $range{ start_headers } = $start - $old_headers;
+                    $traillers              = 1;
                     push @tmp, \%range;
                     $sect{ $seen_regex } = \@tmp;
                     $start               = $line_nbr;
                     $seen_regex          = $regex;
+                    $old_headers         = $headers;
                 }
                 else
                 {
@@ -298,16 +359,32 @@ sub parse
                     $seen ^= 1;
                 }
             }
+
         }
-        if ( defined $self->{ traillers } )
+
+        if ( defined $self->{ headers } )
         {
-            if ( $seen && ( $line =~ m/($trail_regex)/g ) )
+            my $line_tmp = $line;
+            if ( ( $line_tmp =~ /($headers_regex)/g ) )
             {
-                $trailler++;
+                $headers++;
             }
             else
             {
-                $trailler = 1;
+                $headers = 0;
+            }
+        }
+
+        if ( defined $self->{ traillers } )
+        {
+            my $line_tmp = $line;
+            if ( $seen && ( $line_tmp =~ m/($traillers_regex)/g ) )
+            {
+                $traillers++;
+            }
+            else
+            {
+                $traillers = 1;
             }
         }
     }
@@ -317,8 +394,10 @@ sub parse
         $line_nbr++;
         my @tmp = @{ $sect{ $seen_regex } };
         my %range;
-        $range{ start } = $start;
-        $range{ end }   = $line_nbr - $trailler;
+        $range{ start }         = $start;
+        $range{ end }           = $line_nbr - $traillers;
+        $range{ end_traillers } = $line_nbr - 1;
+        $range{ start_headers } = $start - $old_headers;
         push @tmp, \%range;
         $sect{ $seen_regex } = \@tmp;
     }
@@ -343,115 +422,148 @@ Parse a file like this (named here test1.cfg)
 		log 127.0.0.1 local0 notice
 		pidfile  /var/run/running.pid
 		nbproc	2
-
+	
 	defaults
 		mode	application
 		option	dontlognull
 		option	closeonexit
 		retries	1
 		contimeout	5000
+	#	
 	special  extra value
+	# comment 1
 		item	1
-		item	2	
+	#comment 2
+	#
+	
+		item	2
 		
+	#####	
+	# test header
+	#####	
 	server	192.168.1.2
-	log	global
-	option	test
-	type	ping 750
-	
-	
+		log	global
+		option	test
+		type	ping 750
+		
 	server	192.168.1.3
 		log	local
 		option	test
 		type	udp 800
-
+	
+	## other
 	server	192.168.1.5
 		log	global
 		option	test2
 		type	tcp 4000
+	
+	
+
 		
 ###########################################################################	
 
 ## First example: ##
 
 	#!/usr/bin/perl
-        use strict;
-        use Config::Basic;
-        use Data::Dumper;
-        use Config::General;
-
-        my $data_file = "test1.cfg";
-       	# Instantiate a new Config::Basic object
+	
+	use strict;
+	
+	use Config::Basic;
+	use Data::Dumper;
+	use Config::General;
+	
+	print "#" x 30;
+	print "\n First example\n";
+	print "#" x 30;
+	print "\n";
+	
+	my $data_file = "test1.cfg";
+	
+	# Instantiate a new Config::Basic object
 	# the input file is "test1.cfg"
 	# we expect 3 sections tag
 	# and each trailling part of the section matching one of the regular "traillers" REGEX is skipped
-	# this allow to skip trailling blank line or comment at the end, 
+	# this allow to skip trailling blank line or comment at the end,
 	# but keep blank line and comment inside the section
-
+	
 	my $a = Config::Basic->new(
-	    	-file     => $data_file,
-    		-sections => [ 'global', 'server', 'defaults' ],
-    		-traillers => [ '^\s*$' , '^#' ],
+	    -file     => $data_file,
+	    -sections => [ 'global', 'server', 'defaults', 'special' ],
+	    -traillers => [ '^\s*$' , '^#' ],
+	    -headers => [ '^#' ],
 	);
-
+	
 	print "\nPrint the 'sections' set\n";
 	print Dumper( $a->sections );
-
+	
 	print "\nPrint the parsed data\n";
+	print "look at the value start_headers and end_traillers\n";
+	print "for the section 'special' and the first section 'server'\n";
 	my $res = $a->parse();
 	print Dumper( $res );
-
+	
 	my $se = $a->get_section( $res->{ server }[1] );
-
+	
 	print "\nPrint Config::General result for the second 'server' section\n";
 	my %re = ParseConfig( -String => $se );
 	print Dumper( \%re );
-
+	
 	print "\nSet a new sections set and print it\n";
 	print Dumper( $a->sections( [ 'global', 'server', 'special', 'defaults' ] ) );
-
-
+	
+	
 	print "\nParse the data and print\n";
 	$res = $a->parse();
 	print Dumper( $res );
-
-
-
-## Second example ####
-
-	#!/usr/bin/perl
-        use strict;
-        use Config::Basic;
-        use Data::Dumper;
-       
+	
+	
+	print "\nExtract the second firts 'server'\n";
+	$se = $a->get_section( $res->{ server }[0] );
+	print Dumper( $se );
+	
+	
+	print "\nPrint the 'traillers' set\n";
+	$se = $a->traillers( );
+	print Dumper( $se );
+	
+	print "\nPrint the 'headers' set\n";
+	$se = $a->headers( );
+	print Dumper( $se );
+	
+	
+	print "\n";
+	print "#" x 30;
+	print "\n Second example\n";
+	print "#" x 30;
+	print "\n";
+	
 	use IO::All;
-
-	my $data_file = "test1.cfg";
-
+	
+	
 	my @data = io( $data_file )->chomp->slurp;
 	my $a    = Config::Basic->new(
-   	 	-file     => \@data,
-    		-sections => [ 'global', 'server', 'defaults' ],
-    		-traillers => [ '^\s*$', '^#' ],
-		);
-
+	    -file     => \@data,
+	    -sections => [ 'global', 'server', 'defaults' ],
+	    -traillers => [ '^\s*$', '^#' ],
+	);
+	
 	my $res = $a->parse();
-
+	
 	# Get the second 'server' section and use start , end and real data
 	my ( $start, $end, $sect ) = $a->get_section( $res->{ server }[1] );
-
+	
 	# set the line counter to the start of the section
 	my $line_nbr = $start;
 	foreach my $line ( @{ $sect } )
 	{
 	# increment the line counter
 	    $line_nbr++;
-    
+	    
 	# made some test onthe line data
 	    if ( $line =~ /type/ )
 	    {
 	        print "$line_nbr $line\n";
-	
+		
 	# directly modify the line in the real data
 	        $data[ $line_nbr -1 ] =~ s/udp/UDP/;
 	    }
@@ -459,8 +571,7 @@ Parse a file like this (named here test1.cfg)
 	
 	# show the result (or save, or  ...)
 	print Dumper( \@data );
-
-
+	
 
 =end readme
 
@@ -485,6 +596,7 @@ See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program; 
 if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-B<Config::Basic> Copyright (C) 2006 DULAUNOY Fabrice. B<Config::Basic> comes with ABSOLUTELY NO WARRANTY; 
+B<Config::Basic> Copyright (C) 2006,2007 DULAUNOY Fabrice. B<Config::Basic> comes with ABSOLUTELY NO WARRANTY; 
 for details See: L<http://www.gnu.org/licenses/gpl.html> 
 This is free software, and you are welcome to redistribute it under certain conditions;
+

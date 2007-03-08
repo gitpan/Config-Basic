@@ -1,6 +1,6 @@
 ---
 name: Config-Basic
-version: 1.25
+version: 1.26
 author: []
 abstract: Basic parser for simple configuration file
 license: perl
@@ -17,7 +17,7 @@ recommends:
 provides:
   Config::Basic:
     file: lib/Config/Basic.pm
-    version: 1.25
+    version: 1.26
 generated_by: Module::Build version 0.2805
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.2.html
