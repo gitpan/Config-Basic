@@ -8,6 +8,7 @@ METHODS
             OO interface
 
   new
+
         Create a new parser
 
             "-sections" = an ARRAY with all possible section "-target" a
@@ -26,6 +27,7 @@ METHODS
             'global', 'listen', 'defaults' ], );
 
   target
+
             get/set the target in use
 
             my $target = $a->target(  ) ;                   # return the current target     
@@ -35,6 +37,7 @@ METHODS
                                                             # and return the new target (here the ARRAY ref)
 
   sections
+
             get/set the sections to use
 
             my $sect = $a->sections(  ) ;                           # return  a ARRAY ref with the current sections 
@@ -42,6 +45,7 @@ METHODS
                                                                     # return a ARRAY ref with the current sections
 
   traillers
+
             get/set the traillers to skip
             if at the end of a section, lines match one of these REGEX 
             these lines are not include in the section.
@@ -53,6 +57,7 @@ METHODS
                                                                     # return a ARRAY ref with the current traillers
 
   traillers
+
             get/set the headers to at
             if before of a  section, lines match one of these REGEX 
             these lines are add in the section (under the tag "start_headers").
@@ -64,6 +69,7 @@ METHODS
                                                                     # return a ARRAY ref with the current headers
 
   get_section
+
             method to retrieve a section.
             the method expect a ref to a HASH with { start => "start_line" , end => "end_line" }
 
@@ -73,6 +79,7 @@ METHODS
                             ARRAY ref with the content of the section
 
   parse
+
             method to parse a target
             the method return a ref to a HASH. 
             Each key are a section.
@@ -264,6 +271,6 @@ LICENSE
 
     Config::Basic Copyright (C) 2006,2007 DULAUNOY Fabrice. Config::Basic
     comes with ABSOLUTELY NO WARRANTY; for details See:
-    <http://www.gnu.org/licenses/gpl.html> This is free software, and you
-    are welcome to redistribute it under certain conditions;
+    http://www.gnu.org/licenses/gpl.html This is free software, and you are
+    welcome to redistribute it under certain conditions;
 

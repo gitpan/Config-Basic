@@ -2,8 +2,8 @@
 # Tie::Countloop package
 # Gnu GPL2 license
 #
-# $Id:: Basic.pm 26 2007-03-08 15:56:20Z root            $
-# $Revision:: 26                                         $
+# $Id:: Basic.pm 81 2007-04-03 07:02:51Z fabrice         $
+# $Revision:: 81                                         $
 #
 # Fabrice Dulaunoy <fabrice_at_dulaunoy_dot_com>
 ###########################################################
@@ -32,8 +32,8 @@ use IO::All;
 use fields qw{ sections target traillers headers};
 use vars qw($VERSION);
 
-#$VERSION = do { my @rev = ( q$Revision: 26 $ =~ /\d+/g ); sprintf "%d." . "%d" x $#rev, @rev };
-$VERSION = do { my @rev = ( q$Revision: 26 $ =~ /\d+/g ); sprintf "1.%02d", @rev };
+#$VERSION = do { my @rev = ( q$Revision: 81 $ =~ /\d+/g ); sprintf "%d." . "%d" x $#rev, @rev };
+$VERSION = do { my @rev = ( q$Revision: 81 $ =~ /\d+/g ); sprintf "1.%02d", @rev };
 
 use Data::Dumper;
 ###########################################################################

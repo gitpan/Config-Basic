@@ -23,8 +23,8 @@ my $data_file = "test1.cfg";
 my $a = Config::Basic->new(
     -file     => $data_file,
     -sections => [ 'global', 'server', 'defaults', 'special' ],
-    -traillers => [ '^\s*$' , '^#' ],
-    -headers => [ '^#' ],
+    -traillers => [ '^#' ],
+    -headers => [  '^#' ],
 );
 
 print "\nPrint the 'sections' set\n";
@@ -75,16 +75,16 @@ use IO::All;
 
 
 my @data = io( $data_file )->chomp->slurp;
-my $a    = Config::Basic->new(
+my $b    = Config::Basic->new(
     -file     => \@data,
     -sections => [ 'global', 'server', 'defaults' ],
-    -traillers => [ '^\s*$', '^#' ],
+    -traillers => [ '^\s+$' ,'^#' ],
 );
 
-my $res = $a->parse();
+my $res = $b->parse();
 
 # Get the second 'server' section and use start , end and real data
-my ( $start, $end, $sect ) = $a->get_section( $res->{ server }[1] );
+my ( $start, $end, $sect ) = $b->get_section( $res->{ server }[1] );
 
 # set the line counter to the start of the section
 my $line_nbr = $start;
