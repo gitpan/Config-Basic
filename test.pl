@@ -7,7 +7,7 @@ use IO::All;
 
 use Data::Dumper;
 
-my $data_file = "haproxy.cfg";
+my $data_file = "test.cfg";
 my @data      = io( $data_file )->chomp->slurp;
 my $a         = Config::Basic->new(
     -data => \@data,

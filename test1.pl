@@ -37,11 +37,15 @@ my $res = $a->parse();
 print Dumper( $res );
 
 my $se = $a->get_section( $res->{ server }[1] );
+print "ref=".(ref $se )."\n";
 
 print "\nPrint Config::General result for the second 'server' section\n";
-my %re = ParseConfig( -String => $se );
-print Dumper( \%re );
+my @h = @{$se};
 
+
+my %re = Config::General::ParseConfig( -String =>   (join "\n", @h)  );
+
+print Dumper( \%re );
 print "\nSet a new sections set and print it\n";
 print Dumper( $a->sections( [ 'global', 'server', 'special', 'defaults' ] ) );
 

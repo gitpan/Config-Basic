@@ -2,8 +2,8 @@
 # Tie::Countloop package
 # Gnu GPL2 license
 #
-# $Id:: Basic.pm 81 2007-04-03 07:02:51Z fabrice         $
-# $Revision:: 81                                         $
+# $Id:: Basic.pm 84 2007-06-11 13:39:45Z fabrice         $
+# $Revision:: 84                                         $
 #
 # Fabrice Dulaunoy <fabrice_at_dulaunoy_dot_com>
 ###########################################################
@@ -29,11 +29,11 @@ use strict;
 use Carp;
 use IO::All;
 
-use fields qw{ sections target traillers headers};
+use fields qw{ sections target traillers headers };
 use vars qw($VERSION);
 
-#$VERSION = do { my @rev = ( q$Revision: 81 $ =~ /\d+/g ); sprintf "%d." . "%d" x $#rev, @rev };
-$VERSION = do { my @rev = ( q$Revision: 81 $ =~ /\d+/g ); sprintf "1.%02d", @rev };
+#$VERSION = do { my @rev = ( q$Revision: 84 $ =~ /\d+/g ); sprintf "%d." . "%d" x $#rev, @rev };
+$VERSION = do { my @rev = ( q$Revision: 84 $ =~ /\d+/g ); sprintf "1.%02d", @rev };
 
 use Data::Dumper;
 ###########################################################################
@@ -79,15 +79,13 @@ my $a  = B<Config::Basic>->new(
 
 sub new
 {
-    my ( $class ) = shift;
+    my $self = shift;
     no strict "refs";
-    my $fields_ref = \%{ "${class}::FIELDS" };
-    my $self       = [$fields_ref];
+    my $self = fields::new( $self );
     $self->{ sections }  = { @_ }->{ -sections };
     $self->{ traillers } = { @_ }->{ -traillers };
     $self->{ headers }   = { @_ }->{ -headers };
     $self->{ target }    = { @_ }->{ -file } || { @_ }->{ -data } || { @_ }->{ -target };
-    bless( $self, $class );
     return $self;
 }
 ###########################################################################
