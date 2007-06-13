@@ -6,14 +6,14 @@ use File::Basename;
 
 use File::Spec 0.82;
 use lib File::Spec->catdir('lib');      # use our self to install
-use lib File::Spec->catdir('t', 'lib'); # use bundled Test::More
+use lib File::Spec->catdir('t'); # use bundled Test::More
 use Module::Build;
 my $build = Module::Build->new
   (
    module_name => 'Config::Basic',
    dist_name => 'Config-Basic',
    dist_abstract => 'Basic parser for simple configuration file',
-   license => 'perl',
+   license => 'gpl',
    requires => {
 		'perl'           => '5.005_03',
 		'Data::Dumper'   => 0,

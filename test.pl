@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-
+use Test::Simple tests => 4;
 use strict;
 use lib "./lib/Config";
 use Basic;
@@ -8,42 +8,18 @@ use IO::All;
 use Data::Dumper;
 
 my $data_file = "test.cfg";
-my @data      = io( $data_file )->chomp->slurp;
+my @data      = io( $data_file )->chomp->slurp;  
+ok( scalar( @data) > 10,        'NumExplodingSheep() get' );
 my $a         = Config::Basic->new(
     -data => \@data,
-#-file => "haproxy.cfg",
     -sections => [ 'global', '#\s+listen', 'listen', 'defaults' ],
 );
 
-#print Dumper($a->target);
-#print Dumper( $a->sections );
-#print $a->sections ;
+
 my $res = $a->parse();
 
 my ($s ,$p)= $a->sections() ;
-print "*s" x 100 ."\n";
-print Dumper( $s );
-print "*p" x 100 ."\n";
-print Dumper( $p );
-print "*r" x 100 ."\n";
-print Dumper( $res );
-print "*" x 100 ."\n";
-my ($se,$start) = $a->get_section( $res->{ '#\s+listen' }[0] );
-print Dumper( $se );
-print "=" x 100 ."\n";
-#use Config::General;
-# my %re = ParseConfig( -String => $se);
-##my $se = $a->parse_section( $res->{ listen }[1] );
-#print Dumper( \%re );
-#print "=" x 100 ."\n";
-#print Dumper( $res );
 
-#print $a->target( "haproxy1.cfg" ) . "\n";
-#
-#print Dumper( $res );
-#print Dumper( ( $res->{ global }[0] ) );
-#my $se = $a->parse_section( $res->{ listen }[1] );
-#print Dumper( $se );
-#
-#my $res = $a->parse;
-#print Dumper( \@data );
+ok((scalar(@$s)) == 4, "Number of section in file" );
+ok($res->{listen}[0]->{start} == 25 , "Start line in section header");
+ok($res->{listen}[0]->{end} == 31 , "Start line in section header");
